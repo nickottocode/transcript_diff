@@ -7,7 +7,7 @@ import { ThemeProvider } from "@/components/theme-provider"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "TextDiff Analyzer",
+  title: "Transcript Differ",
   description: "Compare text from manual input or audio transcription using Deepgram",
     generator: 'v0.dev'
 }

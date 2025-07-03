@@ -214,7 +214,7 @@ export default function Home() {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <h1 className="text-4xl font-bold text-gray-900 dark:text-white">Welcome to TextDiff Analyzer!</h1>
+                  <h1 className="text-4xl font-bold text-gray-900 dark:text-white">Visualize diffs between transcripts!</h1>
                   <p className="text-lg text-gray-600 dark:text-gray-300 mt-2">
                     Currently working on: <span className="font-semibold text-deepgram-teal">{activeGroup.name}</span>
                   </p>
@@ -245,11 +245,6 @@ export default function Home() {
                 </div>
               </div>
 
-              <div className="bg-gradient-to-r from-deepgram-teal-light to-blue-50 border border-deepgram-teal/20 rounded-xl p-4 dark:from-deepgram-teal/20 dark:to-blue-900/20 dark:border-deepgram-teal/30">
-                <p className="text-center text-gray-700 font-medium dark:text-gray-200">
-                  Introducing advanced text comparison with audio transcription powered by Deepgram.
-                </p>
-              </div>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
