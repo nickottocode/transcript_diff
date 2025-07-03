@@ -62,7 +62,7 @@ export function AudioUpload({ onAddTextSet }: AudioUploadProps) {
   }
 
   const buildApiUrl = () => {
-    const baseUrl = isStreaming ? "https://api.deepgram.com/v1/listen" : "https://api.deepgram.com/v1/listen"
+    const baseUrl = "https://api.deepgram.com/v1/listen"
 
     if (!parameters.trim()) return baseUrl
 
@@ -81,6 +81,7 @@ export function AudioUpload({ onAddTextSet }: AudioUploadProps) {
       queryParams = parameters.startsWith("?") ? parameters.slice(1) : parameters
     }
 
+    queryParams = isStreaming ? `emulate_streaming=true&${queryParams}` : queryParams
     return queryParams ? `${baseUrl}?${queryParams}` : baseUrl
   }
 

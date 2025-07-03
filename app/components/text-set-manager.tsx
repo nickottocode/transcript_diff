@@ -17,6 +17,7 @@ interface TextSetManagerProps {
   onSelectionChange: (selectedSets: string[]) => void
   onRemoveSet: (id: string) => void
   onReorderSets: (newOrder: TextSet[]) => void
+  onRenameSet: (id: string, newName: string) => void
   groupName: string
 }
 
@@ -26,6 +27,7 @@ export function TextSetManager({
   onSelectionChange,
   onRemoveSet,
   onReorderSets,
+  onRenameSet,
   groupName,
 }: TextSetManagerProps) {
   const [draggedItem, setDraggedItem] = useState<string | null>(null)
@@ -175,13 +177,22 @@ export function TextSetManager({
 
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-2">
-                  {index === 0 && <Crown className="h-4 w-4 text-amber-500" title="Base text set for comparisons" />}
+                  {index === 0 && <Crown className="h-4 w-4 text-amber-500" aria-label="Base text set for comparisons" />}
                   {textSet.source === "manual" ? (
                     <FileText className="h-4 w-4 text-deepgram-teal" />
                   ) : (
                     <Mic className="h-4 w-4 text-green-500" />
                   )}
-                  <h4 className="font-medium truncate text-gray-900 dark:text-white">{textSet.name}</h4>
+                  <h4
+                    contentEditable
+                    suppressContentEditableWarning
+                    onBlur={(e) =>
+                      onRenameSet(textSet.id, (e.currentTarget.textContent || "").trim())
+                    }
+                    className="font-medium truncate text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-deepgram-teal"
+                  >
+                    {textSet.name}
+                  </h4>
                   <div className="flex items-center gap-1">
                     <Badge
                       variant="secondary"

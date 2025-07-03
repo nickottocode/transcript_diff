@@ -1,6 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef } from "react"
+import type React from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -10,7 +11,7 @@ import { AudioUpload } from "./components/audio-upload"
 import { TextInput } from "./components/text-input"
 import { DiffViewer } from "./components/diff-viewer"
 import { TextSetManager } from "./components/text-set-manager"
-import { Trash2, FileText, Copy } from "lucide-react"
+import { Trash2, FileText, Copy, Download, Upload } from "lucide-react"
 
 export interface TextSet {
   id: string
@@ -70,6 +71,21 @@ export default function Home() {
     setGroups((prev) => prev.map((group) => (group.id === activeGroupId ? { ...group, textSets: newOrder } : group)))
   }
 
+  const renameTextSet = (id: string, newName: string) => {
+    setGroups((prev) =>
+      prev.map((group) =>
+        group.id === activeGroupId
+          ? {
+              ...group,
+              textSets: group.textSets.map((set) =>
+                set.id === id ? { ...set, name: newName } : set
+              ),
+            }
+          : group,
+      ),
+    )
+  }
+
   const clearAllSets = () => {
     setGroups((prev) =>
       prev.map((group) => (group.id === activeGroupId ? { ...group, textSets: [], selectedSets: [] } : group)),
@@ -109,6 +125,75 @@ export default function Home() {
 
   const selectedTextSets = activeGroup.textSets.filter((set) => activeGroup.selectedSets.includes(set.id))
 
+  // ---------------------------------------------------------------------
+  // Import / Export helpers
+  // ---------------------------------------------------------------------
+
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  /**
+   * Trigger a download of the current application state as JSON.
+   */
+  const exportData = () => {
+    try {
+      const json = JSON.stringify(groups)
+      const blob = new Blob([json], { type: "application/json" })
+      const url = URL.createObjectURL(blob)
+
+      const link = document.createElement("a")
+      link.href = url
+      link.download = `textdiff-data-${new Date().toISOString()}.json`
+      link.click()
+
+      URL.revokeObjectURL(url)
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error("Failed to export data", error)
+    }
+  }
+
+  /**
+   * Load application state from a previously exported JSON file.
+   */
+  const importData = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    const reader = new FileReader()
+    reader.onload = (ev) => {
+      try {
+        const raw = ev.target?.result as string
+        const parsed = JSON.parse(raw)
+
+        if (!Array.isArray(parsed)) {
+          alert("Invalid file format – expected an array of groups.")
+          return
+        }
+
+        // Revive Date objects that were stringified
+        const revived: DiffGroup[] = parsed.map((group: DiffGroup) => ({
+          ...group,
+          textSets: group.textSets.map((set) => ({
+            ...set,
+            timestamp: new Date(set.timestamp as unknown as string),
+          })),
+        }))
+
+        setGroups(revived)
+        setActiveGroupId(revived[0]?.id || "default")
+      } catch (err) {
+        // eslint-disable-next-line no-console
+        console.error("Failed to import data", err)
+        alert("Failed to import data – see console for details.")
+      }
+    }
+
+    reader.readAsText(file)
+
+    // Reset the input so that the same file can be selected again if needed
+    e.target.value = ""
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <Header />
@@ -134,10 +219,30 @@ export default function Home() {
                     Currently working on: <span className="font-semibold text-deepgram-teal">{activeGroup.name}</span>
                   </p>
                 </div>
-                <Button variant="ghost" size="sm" className="text-gray-600 dark:text-gray-300">
-                  <Copy className="h-4 w-4 mr-2" />
-                  Copy page
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-gray-600 dark:text-gray-300"
+                    onClick={exportData}
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Export
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-gray-600 dark:text-gray-300"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <Upload className="h-4 w-4 mr-2" />
+                    Import
+                  </Button>
+                  <Button variant="ghost" size="sm" className="text-gray-600 dark:text-gray-300">
+                    <Copy className="h-4 w-4 mr-2" />
+                    Copy page
+                  </Button>
+                </div>
               </div>
 
               <div className="bg-gradient-to-r from-deepgram-teal-light to-blue-50 border border-deepgram-teal/20 rounded-xl p-4 dark:from-deepgram-teal/20 dark:to-blue-900/20 dark:border-deepgram-teal/30">
@@ -192,6 +297,7 @@ export default function Home() {
                   onSelectionChange={updateSelectedSets}
                   onRemoveSet={removeTextSet}
                   onReorderSets={reorderTextSets}
+                  onRenameSet={renameTextSet}
                   groupName={activeGroup.name}
                 />
 
@@ -210,6 +316,15 @@ export default function Home() {
                 <DiffViewer textSets={selectedTextSets} groupName={activeGroup.name} />
               </div>
             </div>
+
+            {/* Hidden input for importing JSON data */}
+            <input
+              type="file"
+              accept="application/json"
+              ref={fileInputRef}
+              onChange={importData}
+              style={{ display: "none" }}
+            />
           </div>
         </main>
       </div>
