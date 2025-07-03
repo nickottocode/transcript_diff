@@ -92,6 +92,7 @@ const generateDiff = (baseText: string, compareText: string): DiffResult[] => {
 export function DiffViewer({ textSets, groupName }: DiffViewerProps) {
   // Toggle to determine whether punctuation should be considered when computing diffs
   const [ignorePunctuation, setIgnorePunctuation] = useState(false)
+  const [showDiff, setShowDiff] = useState(true)
   const [isFullScreen, setIsFullScreen] = useState(false)
   const diffResults = useMemo(() => {
     // Helper to optionally lowercase & strip punctuation
@@ -110,7 +111,7 @@ export function DiffViewer({ textSets, groupName }: DiffViewerProps) {
     const baseText = textSets[0]
     const baseProcessed = preprocess(baseText.content)
     const comparisons = textSets.slice(1).map((textSet) => {
-      const diff = generateDiff(baseProcessed, preprocess(textSet.content))
+      const diff = showDiff ? generateDiff(baseProcessed, preprocess(textSet.content)) : []
       return {
         textSet,
         diff,
@@ -121,7 +122,7 @@ export function DiffViewer({ textSets, groupName }: DiffViewerProps) {
       baseText,
       comparisons,
     }
-  }, [textSets, ignorePunctuation])
+  }, [textSets, ignorePunctuation, showDiff])
 
   if (textSets.length === 0) {
     return (
@@ -183,6 +184,17 @@ export function DiffViewer({ textSets, groupName }: DiffViewerProps) {
             <span className={cn("text-sm", ignorePunctuation ? "text-deepgram-teal font-medium" : "text-gray-500")}>Without Punctuation</span>
           </div>
 
+          {/* Diff Mode Toggle */}
+          <div className="flex items-center gap-3 pt-2">
+            <span className={cn("text-sm", showDiff ? "text-deepgram-teal font-medium" : "text-gray-500")}>Diff On</span>
+            <Switch
+              checked={!showDiff}
+              onCheckedChange={(checked) => setShowDiff(!checked)}
+              className="data-[state=checked]:bg-deepgram-teal"
+            />
+            <span className={cn("text-sm", !showDiff ? "text-deepgram-teal font-medium" : "text-gray-500")}>Diff Off</span>
+          </div>
+
           {textSets.length > 1 && (
             <Alert className="border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-900/20">
               <Info className="h-4 w-4 text-blue-600 dark:text-blue-400" />
@@ -227,35 +239,43 @@ export function DiffViewer({ textSets, groupName }: DiffViewerProps) {
                 <h4 className="font-medium text-gray-900 dark:text-white">{comparison.textSet.name}</h4>
 
                 <div className="p-4 bg-white border border-gray-200 rounded-lg dark:bg-gray-700 dark:border-gray-600">
-                  <div className="text-sm leading-relaxed text-gray-900 dark:text-gray-100">
-                    {comparison.diff.map((part, partIndex) => (
-                      <span
-                        key={partIndex}
-                        className={
-                          part.type === "insert"
-                            ? "bg-green-100 text-green-800 px-1 py-0.5 rounded dark:bg-green-900/30 dark:text-green-300"
-                            : part.type === "delete"
-                              ? "bg-red-100 text-red-800 px-1 py-0.5 rounded line-through dark:bg-red-900/30 dark:text-red-300"
-                              : ""
-                        }
-                      >
-                        {part.content}
-                        {partIndex < comparison.diff.length - 1 ? " " : ""}
-                      </span>
-                    ))}
-                  </div>
+                  {showDiff ? (
+                    <div className="text-sm leading-relaxed text-gray-900 dark:text-gray-100">
+                      {comparison.diff.map((part, partIndex) => (
+                        <span
+                          key={partIndex}
+                          className={
+                            part.type === "insert"
+                              ? "bg-green-100 text-green-800 px-1 py-0.5 rounded dark:bg-green-900/30 dark:text-green-300"
+                              : part.type === "delete"
+                                ? "bg-red-100 text-red-800 px-1 py-0.5 rounded line-through dark:bg-red-900/30 dark:text-red-300"
+                                : ""
+                          }
+                        >
+                          {part.content}
+                          {partIndex < comparison.diff.length - 1 ? " " : ""}
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="whitespace-pre-wrap text-sm leading-relaxed text-gray-900 dark:text-gray-100">
+                      {comparison.textSet.content}
+                    </p>
+                  )}
                 </div>
 
-                <div className="flex gap-4 text-xs text-muted-foreground dark:text-gray-400">
-                  <span className="flex items-center gap-1">
-                    <div className="w-3 h-3 bg-green-200 rounded dark:bg-green-800"></div>
-                    Added (vs base)
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <div className="w-3 h-3 bg-red-200 rounded dark:bg-red-800"></div>
-                    Removed (vs base)
-                  </span>
-                </div>
+                {showDiff && (
+                  <div className="flex gap-4 text-xs text-muted-foreground dark:text-gray-400">
+                    <span className="flex items-center gap-1">
+                      <div className="w-3 h-3 bg-green-200 rounded dark:bg-green-800"></div>
+                      Added (vs base)
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <div className="w-3 h-3 bg-red-200 rounded dark:bg-red-800"></div>
+                      Removed (vs base)
+                    </span>
+                  </div>
+                )}
               </div>
             ))}
           </div>
