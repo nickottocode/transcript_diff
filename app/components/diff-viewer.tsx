@@ -1,10 +1,12 @@
 "use client"
 
-import { useMemo } from "react"
+import { useMemo, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { GitCompare, FileText, Crown, Info } from "lucide-react"
+import { Switch } from "@/components/ui/switch"
+import { cn } from "@/lib/utils"
 import type { TextSet } from "../page"
 
 interface DiffViewerProps {
@@ -43,7 +45,7 @@ const generateDiff = (baseText: string, compareText: string): DiffResult[] => {
     } else {
       // Look ahead to find matches
       let found = false
-      for (let k = j + 1; k < Math.min(j + 10, compareWords.length); k++) {
+      for (let k = j + 1; k < Math.min(j + 5, compareWords.length); k++) {
         if (baseWords[i] === compareWords[k]) {
           // Insert words from compareText
           for (let l = j; l < k; l++) {
@@ -58,7 +60,7 @@ const generateDiff = (baseText: string, compareText: string): DiffResult[] => {
       }
 
       if (!found) {
-        for (let k = i + 1; k < Math.min(i + 10, baseWords.length); k++) {
+        for (let k = i + 1; k < Math.min(i + 5, baseWords.length); k++) {
           if (baseWords[k] === compareWords[j]) {
             // Delete words from baseText
             for (let l = i; l < k; l++) {
@@ -87,7 +89,13 @@ const generateDiff = (baseText: string, compareText: string): DiffResult[] => {
 }
 
 export function DiffViewer({ textSets, groupName }: DiffViewerProps) {
+  // Toggle to determine whether punctuation should be considered when computing diffs
+  const [ignorePunctuation, setIgnorePunctuation] = useState(false)
   const diffResults = useMemo(() => {
+    // Helper to optionally lowercase & strip punctuation
+    const preprocess = (text: string) =>
+      ignorePunctuation ? text.toLowerCase().replace(/[^\w\s]|_/g, "") : text
+
     if (textSets.length === 0) return null
 
     if (textSets.length === 1) {
@@ -98,8 +106,9 @@ export function DiffViewer({ textSets, groupName }: DiffViewerProps) {
     }
 
     const baseText = textSets[0]
+    const baseProcessed = preprocess(baseText.content)
     const comparisons = textSets.slice(1).map((textSet) => {
-      const diff = generateDiff(baseText.content, textSet.content)
+      const diff = generateDiff(baseProcessed, preprocess(textSet.content))
       return {
         textSet,
         diff,
@@ -110,7 +119,7 @@ export function DiffViewer({ textSets, groupName }: DiffViewerProps) {
       baseText,
       comparisons,
     }
-  }, [textSets])
+  }, [textSets, ignorePunctuation])
 
   if (textSets.length === 0) {
     return (
@@ -142,6 +151,18 @@ export function DiffViewer({ textSets, groupName }: DiffViewerProps) {
           <GitCompare className="h-5 w-5 text-deepgram-teal" />
           Individual Text Comparison
         </CardTitle>
+
+        {/* Punctuation Toggle */}
+        <div className="flex items-center gap-3 pt-2">
+          <span className={cn("text-sm", !ignorePunctuation ? "text-deepgram-teal font-medium" : "text-gray-500")}>With Punctuation</span>
+          <Switch
+            checked={ignorePunctuation}
+            onCheckedChange={setIgnorePunctuation}
+            className="data-[state=checked]:bg-deepgram-teal"
+          />
+          <span className={cn("text-sm", ignorePunctuation ? "text-deepgram-teal font-medium" : "text-gray-500")}>Without Punctuation</span>
+        </div>
+
         {textSets.length > 1 && (
           <Alert className="border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-900/20">
             <Info className="h-4 w-4 text-blue-600 dark:text-blue-400" />
