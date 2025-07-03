@@ -43,7 +43,7 @@ const generateDiff = (baseText: string, compareText: string): DiffResult[] => {
     } else {
       // Look ahead to find matches
       let found = false
-      for (let k = j + 1; k < Math.min(j + 5, compareWords.length); k++) {
+      for (let k = j + 1; k < Math.min(j + 10, compareWords.length); k++) {
         if (baseWords[i] === compareWords[k]) {
           // Insert words from compareText
           for (let l = j; l < k; l++) {
@@ -58,7 +58,7 @@ const generateDiff = (baseText: string, compareText: string): DiffResult[] => {
       }
 
       if (!found) {
-        for (let k = i + 1; k < Math.min(i + 5, baseWords.length); k++) {
+        for (let k = i + 1; k < Math.min(i + 10, baseWords.length); k++) {
           if (baseWords[k] === compareWords[j]) {
             // Delete words from baseText
             for (let l = i; l < k; l++) {
